@@ -96,26 +96,6 @@ var security = {
             });
         }
         return bAlly;
-    },
-    
-    // dectect hostile and determine the priority
-    getHostile : function() {
-        
-        var oHomeHostile = Game.rooms[this.sHomeRoom].find(FIND_HOSTILE_CREEPS);
-        if(oHomeHostile) {
-            for(var name in Game.creeps) {
-                var oTarget = creep.findClosestByRange(oHomeHostile);
-                if(creep.rangedAttack(oTarget) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(oTarget);
-                }
-            }
-        } else {
-            for(var name in Game.creeps) {
-
-                var oHostile = creep.pos.find(FIND_HOSTILE_CREEPS);
-                creep.rangedAttack(hostiles[0]);
-            }
-        }
     }
 };
 
