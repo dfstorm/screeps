@@ -16,35 +16,65 @@ var security = {
     
     sHomeRoom: 'E78S14',
     
+    sDefenceGroup: 'a',
+    sOverLook: 'overLook',
+    
     arrRoomsSecurity: [
-            'E78S14',   // home world
-            'E79S14',   // Right
-            'E77S14',   // Left
-            'E78S13'    // top
+           'E78S14',   // home world
+           'E79S14',   // Right
+           'E77S14',   // Left
+           'E78S13'    // top
         ],
     
     oHostileArray: [], // rooms with creep
     
     run : function() { // BASE RUNTIME for defense
        
+       
+       
+       
         var sWarRoom = this.rRoomWithHostile();
         if(sWarRoom) {
+            console.log('War!');
+            console.log('Enemy detected in '+sWarRoom,30)
+            Game.notify('War ! Room: '+ sWarRoom);
+            
+            var hostiles = Game.rooms[sWarRoom].find(FIND_HOSTILE_CREEPS, {
+                             filter: (hostile) => {
+                                return (security.arrAllies.indexOf(hostile.owner.username) == -1);
+                             }
+                        });
+            
+            var towers = Game.rooms[sWarRoom].find(
+            FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
+            if(hostiles.length > 0) {
+                towers.forEach(tower => tower.attack(hostiles[0]));
+            }
+            
+            
+            
             // war status
             for(var name in Game.creeps) {
                 var creep = Game.creeps[name];
-                if(creep.memory.role == 'a') {
+                if(creep.memory.role == security.sDefenceGroup || creep.memory.role == security.sOverLook) {
                     if(creep.room.name !== sWarRoom) {
                         creep.moveTo(sWarRoom);
                     } else {
                         var oIndividualHostile = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS, {
                              filter: (hostile) => {
-                                 return (this.isAlly(hostile.owner.name)?false:true);
+                                return (security.arrAllies.indexOf(hostile.owner.username) == -1);
                              }
                         });
                         if(oIndividualHostile) {
                             if(creep.rangedAttack(oIndividualHostile) == ERR_NOT_IN_RANGE) {
+                                creep.say('Sparta!');
                                 creep.moveTo(oIndividualHostile);
                             }
+                            if(creep.attack(oIndividualHostile) == ERR_NOT_IN_RANGE) {
+                                creep.say('Sparta!');
+                               // creep.moveTo(oIndividualHostile);
+                            }
+                            
                         }
                     }
                 }
@@ -56,46 +86,38 @@ var security = {
                 FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}}
             );
             towers.forEach(tower => tower.repair(tower.pos.findClosestByRange(FIND_STRUCTURES, {
-                        filter: (structure) => structure.hits < (5000 > structure.hitsMax ? structure.hitsMax : 5000 )
-            })));
+                        filter: (structure) => structure.hits < (10000 > structure.hitsMax ? structure.hitsMax : 10000 )
+            }))); 
             for(var name in Game.creeps) {
                 var creep = Game.creeps[name];
-                if(creep.memory.role == 'a') {
+                if(creep.memory.role == security.sDefenceGroup) {
                     creep.moveTo(Game.flags['r1']);
                 }
             }
         }
+        
     },
     
     rRoomWithHostile : function() {
        
-        var bHostile = false;
+        var sRoom = false;
        
-        this.arrRoomsSecurity.forEach(function(entry) {
-           var hostiles = Game.rooms[entry].find(FIND_HOSTILE_CREEPS);
-           hostiles.forEach(function(entry) {
-               if(!this.isAlly(entry.owner.username)) {
-                   // then it's hostile. Acticate defence protocols
-                   bHostile = entry;
-               }
-           });
+        security.arrRoomsSecurity.forEach(function(sSelectedRoom) {
+            if(sSelectedRoom !== 'undefined') {
+              
+                var hostiles = Game.rooms[sSelectedRoom].find(FIND_HOSTILE_CREEPS,{filter: (hostile) => {
+                                return (security.arrAllies.indexOf(hostile.owner.username) == -1);
+                }});
+                       
+                if(hostiles.length > 0) {
+                    
+                    sRoom = sSelectedRoom;
+                } 
+            }
         });
+        
+        return sRoom;
        
-        return bHostile;
-       
-    },
-    
-    isAlly : function(sOwnerName) {
-      
-        var bAlly = false;
-        if(Memory.IsAllyOneOkay == true) {
-            this.arrAllies.forEach(function(entry) {
-               if(entry == sOwnerName) {
-                   bAlly = true;
-               }
-            });
-        }
-        return bAlly;
     }
 };
 
